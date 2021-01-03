@@ -73,5 +73,5 @@ if __name__ == '__main__':
 
     # Show figure and save figure. export_fig style export is native to matplotlib
     show()
-    fig.savefig(filename + ".pdf", dpi=fig.dpi, edgecolor='w', format='pdf', transparent=True, pad_inches=0.1,
+    fig.savefig('demo.pdf', dpi=fig.dpi, edgecolor='w', format='pdf', transparent=True, pad_inches=0.1,
                 bbox_inches='tight')

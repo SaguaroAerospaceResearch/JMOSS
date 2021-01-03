@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="dac5debb-5a3a-4b6e-927d-ec061ce9b5f0" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/demo.pdf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/python_demo.py" beforeDir="false" afterPath="$PROJECT_DIR$/python_demo.py" afterDir="false" />
-    </list>
+    <list default="true" id="dac5debb-5a3a-4b6e-927d-ec061ce9b5f0" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -78,7 +74,6 @@
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
         <env name="MPLBACKEND" value="Qt5Agg" />
       </envs>
       <option name="SDK_HOME" value="/usr/local/bin/python3.9" />
@@ -114,6 +109,7 @@
       <workItem from="1609627515717" duration="9106000" />
       <workItem from="1609639428414" duration="1067000" />
       <workItem from="1609640885990" duration="34000" />
+      <workItem from="1609645446590" duration="24000" />
     </task>
     <servers />
   </component>

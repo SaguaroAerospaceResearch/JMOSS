@@ -73,16 +73,13 @@
       <module name="JMOSS" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="MPLBACKEND" value="Qt5Agg" />
-      </envs>
-      <option name="SDK_HOME" value="/usr/local/bin/python3.9" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="false" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/python_demo" />
+      <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/python_demo.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/python_demo/python_demo.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="true" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -110,6 +107,7 @@
       <workItem from="1609639428414" duration="1067000" />
       <workItem from="1609640885990" duration="34000" />
       <workItem from="1609645446590" duration="24000" />
+      <workItem from="1609711730317" duration="200000" />
     </task>
     <servers />
   </component>

@@ -7,6 +7,7 @@ from pandas import read_csv
 from matplotlib.pyplot import subplots, FormatStrFormatter, rc, show
 from matplotlib import cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib as mpl
 
 if __name__ == '__main__':
     # Use Pandas to read CSV and import data as a Pandas DataFrame
@@ -41,6 +42,7 @@ if __name__ == '__main__':
     print(info_str % info_data)
 
     # Now do a basic plot of time versus altitude and color code by speed
+    mpl.use('Qt5Agg')
     rc('font', **{'family': 'serif', 'weight': 'normal', 'size': 12})
     fig, ax = subplots(figsize=(10, 8))
     divider = make_axes_locatable(ax)

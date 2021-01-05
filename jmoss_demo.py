@@ -38,3 +38,8 @@ if __name__ == '__main__':
     data_files = [join(data_dir, name) for name in listdir(data_dir) if 'CLASS' in name]
     for filename in data_files:
         estimator.add_test_point(filename)
+
+    # Process the test points This processes SPE results for all loaded test points. Later we can choose which one(s) to
+    # include in the final model. You can also provide a list of labels to process specific points.
+    estimator.process_test_points()
+

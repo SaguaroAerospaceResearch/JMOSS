@@ -39,7 +39,10 @@ if __name__ == '__main__':
     for filename in data_files:
         estimator.add_test_point(filename)
 
-    # Process the test points This processes SPE results for all loaded test points. Later we can choose which one(s) to
-    # include in the final model. You can also provide a list of labels to process specific points.
-    estimator.process_test_points()
+    # To process all test points, use 'process_test_points()'
+    # To process a list of test points use 'process_test_points(list)'
+    # To process a single test point use 'process_test_point(label)'
+    estimator.process_test_point('CLASS95_12SEP_SUPER')
+
+    # Now
 

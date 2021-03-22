@@ -13,32 +13,43 @@ Written by Juan Jurado, Clark McGehee
 
 from pandas import read_csv
 from os.path import splitext, basename
-from JMOSS.utilities import mach_from_qc_pa
-from numpy import rad2deg
+from JMOSS.utilities import mach_from_qc_pa, iterate_pa_oat
+from numpy import rad2deg, sqrt, zeros, column_stack, cos, tan, arcsin, arctan
+from numpy.linalg import inv
+from scipy.optimize import least_squares
+from scipy.spatial.transform import rotation as r
 
 
 class JmossEstimator:
     def __init__(self, parameter_names: dict):
-        self.test_points = {}
+        self.flight_data = {}
         self.spe_results = {}
         self.parameter_names = parameter_names
         self.messages = self.generate_console_messages(parameter_names)
         self.print_console_message('initialize')
         self.print_console_message('settings')
+        if 'ambient temperature' in parameter_names.keys():
+            self.print_console_message('using oat')
+            self.use_oat = True
+        elif 'total temperature' in parameter_names.keys():
+            self.print_console_message('using tat')
+            self.use_oat = False
+        else:
+            raise (KeyError('Neither ambient temperature nor total temperature were provided.'))
 
     def add_test_point(self, filename: str):
-        data = read_csv(filename)
         label = splitext(basename(filename))[0]
-        point = self.test_points.get(label, None)
+        point = self.flight_data.get(label, None)
         if point is not None:
             raise IndexError('Test point labeled %s has already been added.' % label)
-        self.test_points[label] = data
+        dataframe = read_csv(filename)
+        self.flight_data[label] = dataframe
         info = self.get_test_point_summary(label)
         self.print_console_message('new point', label)
         self.print_console_message('point info', info)
 
     def get_test_point(self, label: str):
-        point = self.test_points.get(label, None)
+        point = self.flight_data.get(label, None)
         if point is None:
             raise IndexError('Test point labeled %s is not in the estimator.' % label)
         return point
@@ -65,11 +76,11 @@ class JmossEstimator:
 
     @property
     def test_point_names_list(self):
-        return list(self.test_points.keys())
+        return list(self.flight_data.keys())
 
     @property
     def num_test_points(self):
-        return len(self.test_points.keys())
+        return len(self.flight_data.keys())
 
     @staticmethod
     def generate_console_messages(settings: dict):
@@ -80,10 +91,14 @@ class JmossEstimator:
         init_strs = [
             '*********************************************************************************************',
             '**************** Jurado-McGehee Online Self Survey ADS Calibration Algorithm ****************',
-            '**************************      Version 6.0, January 2021     *******************************',
+            '****************************      Version 6.0, April 2021     *******************************',
             '*********************************************************************************************']
         init_msg = '\n'.join(init_strs)
         messages['initialize'] = init_msg
+
+        # Temperature messages
+        messages['using oat'] = 'Ambient temperature data provided. JMOSS will not derive OAT.\n\n'
+        messages['using tat'] = 'Total temperature data provided. JMOSS will self-derive OAT.\n\n'
 
         # Write settings message
         settings_strs = ['%s : %s' % (key, value) for key, value in settings.items()]
@@ -113,8 +128,8 @@ class JmossEstimator:
         else:
             print(message, end='')
 
-    def get_spe_results(self, label: str):
-        results = self.spe_results.get(label, None)
+    def get_spe_model(self, label: str):
+        results = self.spe_models.get(label, None)
         if results is None:
             raise IndexError('Test point %s has not been processed.' % label)
         return results
@@ -123,36 +138,118 @@ class JmossEstimator:
         if labels is None:
             labels = self.test_point_names_list
         for label in labels:
-            self.__process_test_point(label)
+            self.process_test_point(label)
 
-    def __process_test_point(self, label):
+    def process_test_point(self, label):
+        # Check for flight data
+        if label not in self.test_point_names_list:
+            raise IndexError('Test point %s not found.' % label)
+
         # Print processing message
         self.print_console_message('processing', label)
 
-        # Unload test point data frame
-        data = self.get_test_point(label)
+        # Use nonlinear least squares to solve for unknown variables
+        params = zeros(7)
+        wind_to_nav = self.get_frame_transform(label)
+        flight_data = self.extract_flight_data(label)
+        lsq = least_squares(self.jmoss_obj_tat, params, args=[wind_to_nav, flight_data], method='lm')
 
-        # Unpack parameters
-        # Air data
-        tot_pres = self.get_test_point_parameter(label, 'total pressure')
-        stat_pres = self.get_test_point_parameter(label, 'static pressure')
-        tot_temp = self.get_test_point_parameter(label, 'total temperature')
-        aoa = self.get_test_point_parameter(label, 'angle of attack')
-        aos = self.get_test_point_parameter(label, 'angle of slideslip')
-
-        # GPS
-        n_vel = self.get_test_point_parameter(label, 'north velocity')
-        e_vel = self.get_test_point_parameter(label, 'east velocity')
-        d_vel = self.get_test_point_parameter(label, 'down velocity')
-        height = self.get_test_point_parameter(label, 'geometric height')
-
-        # EGI
-        roll = self.get_test_point_parameter(label, 'roll angle')
-        pitch = self.get_test_point_parameter(label, 'pitch angle')
-        yaw = self.get_test_point_parameter(label, 'true heading')
-
-        # Compute SPE
+        # Use the lsq results to produce SPE model
+        results = self.SpeResults(flight_data, lsq) # noqa
+        self.spe_results[label] = results
 
         # Print done message
         self.print_console_message('done')
 
+    @staticmethod
+    def jmoss_obj_tat(params, wind_to_nav, flight_data):
+        # Unload data
+        tot_pres = flight_data[:, 0]
+        tat = flight_data[:, 1]
+        gs_n_meas = flight_data[:, 2:5]
+        height = flight_data[:, 5]
+
+        # Unload model parameters
+        pa_bias = params[0]
+        wind = params[[1, 2, 3]]
+        eta_model = params[[4, 5, 6]]
+
+        # Iterate to find ambient pressure, oat, and mach based on current parameter estimates
+        amb_pres, oat, mach_pc = iterate_pa_oat(height, tot_pres, tat, pa_bias, eta_model)
+
+        # Compute true airspeed then rotate from wind frame to nav frame to compare against GPS
+        tas_w = mach_pc * sqrt(oat / 288.1500) * 661.478827231622
+        tas_n = wind_to_nav.apply(column_stack([tas_w, 0 * tas_w, 0 * tas_w]))
+        gs_n_est = tas_n + wind
+        error = gs_n_est.flatten(order='F') - gs_n_meas.flatten(order='F')
+        return error
+
+    def extract_flight_data(self, label):
+        tot_pres = self.get_test_point_parameter(label, 'total pressure')
+        tat = self.get_test_point_parameter(label, 'total temperature')
+        n_vel = (1 / 1.6878) * self.get_test_point_parameter(label, 'north velocity')
+        e_vel = (1 / 1.6878) * self.get_test_point_parameter(label, 'east velocity')
+        d_vel = (1 / 1.6878) * self.get_test_point_parameter(label, 'down velocity')
+        height = self.get_test_point_parameter(label, 'geometric height')
+        stat_pres = self.get_test_point_parameter(label, 'static pressure')
+        aoa = self.get_test_point_parameter(label, 'angle of attack')
+        data = column_stack([tot_pres, tat, n_vel, e_vel, d_vel, height, stat_pres, aoa])
+        return data
+
+    def get_frame_transform(self, label):
+        # Unload angular data
+        roll = self.get_test_point_parameter(label, 'roll angle')
+        pitch = self.get_test_point_parameter(label, 'pitch angle')
+        yaw = self.get_test_point_parameter(label, 'true heading')
+        aos_ind = self.get_test_point_parameter(label, 'angle of slideslip')
+
+        # Unload GPS data
+        n_vel = self.get_test_point_parameter(label, 'north velocity')
+        e_vel = self.get_test_point_parameter(label, 'east velocity')
+        d_vel = self.get_test_point_parameter(label, 'down velocity')
+
+        # Compute and correct vane angles
+        gamma = arcsin(-d_vel / (sqrt(n_vel ** 2 + e_vel ** 2)))
+        alpha_corr = pitch - gamma
+        beta_corr = arctan(cos(alpha_corr) * tan(aos_ind))
+
+        # Compute wind-to-nav rotation matrices
+        body_to_nav = r.Rotation.from_euler('ZYX', column_stack([yaw, pitch, roll]))
+        wind_to_body = r.Rotation.from_euler('ZYX', column_stack([-beta_corr, alpha_corr, 0 * alpha_corr])).inv()
+        wind_to_nav = body_to_nav * wind_to_body
+        return wind_to_nav
+
+    # Subclass for computing and storing SPE estimates with uncertainty
+    class SpeResults:
+        def __init__(self, flight_data, lsq_results):
+            # Unload flight data
+            tot_pres = flight_data[:, 0]
+            tat = flight_data[:, 1]
+            height = flight_data[:, 5]
+            stat_pres = flight_data[:, 6]
+            aoa = flight_data[:, 7]
+
+            # Unload least squares results
+            beta = lsq_results.x
+            jac = lsq_results.jac
+            sse = lsq_results.cost
+            mse = sse / (jac.shape[0] - beta.shape[0])
+            beta_cov = mse * inv(jac.T @ jac)
+
+            # Compute results
+            pa_bias = beta[0]
+            eta_model = beta[[4, 5, 6]]
+            amb_pres, oat, mach_pc = iterate_pa_oat(height, tot_pres, tat, pa_bias, eta_model)
+            mach_ic = mach_from_qc_pa((tot_pres - stat_pres) / stat_pres)
+            spe_ratio = (stat_pres - amb_pres) / stat_pres
+
+            # Store results
+            self.amb_pres = amb_pres
+            self.stat_pres = stat_pres
+            self.spe_ratio = spe_ratio
+            self.mach_pc = mach_pc
+            self.mach_ic = mach_ic
+            self.aoa = aoa
+            self.oat = oat
+            self.parameters = beta
+            self.covariance = beta_cov

@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="dac5debb-5a3a-4b6e-927d-ec061ce9b5f0" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JMOSS/estimation.py" beforeDir="false" afterPath="$PROJECT_DIR$/JMOSS/estimation.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/jmoss_demo.py" beforeDir="false" afterPath="$PROJECT_DIR$/jmoss_demo.py" afterDir="false" />
     </list>
@@ -89,6 +90,9 @@
       <module name="JMOSS" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="MPLBACKEND" value="Qt5Agg" />
+      </envs>
       <option name="SDK_HOME" value="" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
       <option name="IS_MODULE_SDK" value="true" />
@@ -126,6 +130,10 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <list>
+      <item itemvalue="Python.jmoss_demo" />
+      <item itemvalue="Python.python_demo" />
+    </list>
     <recent_temporary>
       <list>
         <item itemvalue="Python.jmoss_demo" />
@@ -151,7 +159,8 @@
       <workItem from="1615358276766" duration="37000" />
       <workItem from="1615358326664" duration="7000" />
       <workItem from="1616260966156" duration="6801000" />
-      <workItem from="1616294488488" duration="25885000" />
+      <workItem from="1616294488488" duration="25958000" />
+      <workItem from="1616436541963" duration="9420000" />
     </task>
     <servers />
   </component>
@@ -171,6 +180,6 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/JMOSS$jmoss_demo.coverage" NAME="jmoss_demo Coverage Results" MODIFIED="1616391361149" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/JMOSS$jmoss_demo.coverage" NAME="jmoss_demo Coverage Results" MODIFIED="1616453381929" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

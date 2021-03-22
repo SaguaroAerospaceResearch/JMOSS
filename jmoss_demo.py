@@ -11,6 +11,8 @@ Written by Juan Jurado, Clark McGehee
         Air Data System Calibration." Journal of Aircraft 56.2 (2019): 517-528.
 """
 from JMOSS.estimation import JmossEstimator
+from matplotlib import pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
 from os import listdir
 from os.path import join
 
@@ -47,3 +49,19 @@ if __name__ == '__main__':
     # To get the results of a list of test points, use 'get_spe_results(list)'
     results = estimator.get_spe_results(['CLASS95_12SEP_SUPER'])
 
+    # Visualize the results
+    point = results[0]
+    fig, ax = plt.subplots()
+    ax.plot(point.mach_ic, point.spe_ratio, 'r-', linewidth=2, label='mean')
+    ax.plot(point.mach_ic, point.inferences['spe ratio'], 'r:', linewidth=2, label='95% C.I')
+    plt.legend()
+    ax.set_xlabel("Instrument corrected Mach number, $M_{ic}$")
+    ax.set_ylabel("SPE ratio, $\Delta P_p / P_s$")
+    ax.set_title("Example JMOSS Python output with confidence intervals", weight='bold')
+    ax.yaxis.set_major_formatter(FormatStrFormatter('%.3f'))
+    ax.xaxis.set_major_formatter(FormatStrFormatter('%.3f'))
+    ax.grid(which='minor', alpha=0.2, linestyle=":")
+    ax.grid(which='major', alpha=0.2, linestyle=":")
+    ax.minorticks_on()
+    fig.savefig('CLASS95.pdf', dpi=fig.dpi, edgecolor='w', format='pdf',
+                transparent=True, pad_inches=0.1, bbox_inches='tight')

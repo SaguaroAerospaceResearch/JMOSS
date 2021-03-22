@@ -128,19 +128,24 @@ class JmossEstimator:
         else:
             print(message, end='')
 
-    def get_spe_model(self, label: str):
-        results = self.spe_models.get(label, None)
-        if results is None:
-            raise IndexError('Test point %s has not been processed.' % label)
-        return results
+    def get_spe_results(self, labels: list = None):
+        if labels is None:
+            labels = self.test_point_names_list
+        all_results = []
+        for label in labels:
+            results = self.spe_results.get(label, None)
+            if results is None:
+                raise IndexError('Test point %s has not been processed.' % label)
+            all_results.append(results)
+        return  all_results
 
     def process_test_points(self, labels: list = None):
         if labels is None:
             labels = self.test_point_names_list
         for label in labels:
-            self.process_test_point(label)
+            self.__process_test_point(label)
 
-    def process_test_point(self, label):
+    def __process_test_point(self, label):
         # Check for flight data
         if label not in self.test_point_names_list:
             raise IndexError('Test point %s not found.' % label)

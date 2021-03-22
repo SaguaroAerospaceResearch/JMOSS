@@ -41,8 +41,9 @@ if __name__ == '__main__':
 
     # To process all test points, use 'process_test_points()'
     # To process a list of test points use 'process_test_points(list)'
-    # To process a single test point use 'process_test_point(label)'
-    estimator.process_test_point('CLASS95_12SEP_SUPER')
+    estimator.process_test_points(['CLASS95_12SEP_SUPER'])
 
-    # Now
+    # To get the results of all points, use 'get_spe_results()'
+    # To get the results of a list of test points, use 'get_spe_results(list)'
+    results = estimator.get_spe_results(['CLASS95_12SEP_SUPER'])
 

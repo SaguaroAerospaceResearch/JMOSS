@@ -16,6 +16,11 @@ from matplotlib.ticker import FormatStrFormatter
 from os import listdir
 from os.path import join
 
+# TODO: Visualize
+# TODO: Ingest weather balloon
+# TODO: Ingest TFB
+# TODO: Model selection
+
 if __name__ == '__main__':
     # Provide the mapping between JMOSS expected parameters and your specific DAS parameters
     parameter_names = {'time': 'time_s',
@@ -43,17 +48,18 @@ if __name__ == '__main__':
 
     # To process all test points, use 'process_test_points()'
     # To process a list of test points use 'process_test_points(list)'
-    estimator.process_test_points(['CLASS95_12SEP_SUPER'])
+    estimator.process_test_points(['CLASS65_12SEP_SUPER', 'CLASS95_12SEP_SUPER'])
 
     # To get the results of all points, use 'get_spe_results()'
     # To get the results of a list of test points, use 'get_spe_results(list)'
-    results = estimator.get_spe_results(['CLASS95_12SEP_SUPER'])
+    results = estimator.get_spe_results(['CLASS65_12SEP_SUPER', 'CLASS95_12SEP_SUPER'])
 
     # Visualize the results
-    point = results[0]
     fig, ax = plt.subplots()
-    ax.plot(point.mach_ic, point.spe_ratio, 'r-', linewidth=2, label='mean')
-    ax.plot(point.mach_ic, point.inferences['spe ratio'], 'r:', linewidth=2, label='95% C.I')
+    colors = ['r', 'g', 'b']
+    for index, point in enumerate(results):
+        ax.plot(point.mach_ic, point.spe_ratio, color=colors[index], linestyle='-', linewidth=2, label='mean')
+        ax.plot(point.mach_ic, point.inferences['spe ratio'], color=colors[index], linestyle='--', linewidth=2, label='95% C.I')
     plt.legend()
     ax.set_xlabel("Instrument corrected Mach number, $M_{ic}$")
     ax.set_ylabel("SPE ratio, $\Delta P_p / P_s$")
@@ -63,5 +69,3 @@ if __name__ == '__main__':
     ax.grid(which='minor', alpha=0.2, linestyle=":")
     ax.grid(which='major', alpha=0.2, linestyle=":")
     ax.minorticks_on()
-    fig.savefig('CLASS95.pdf', dpi=fig.dpi, edgecolor='w', format='pdf',
-                transparent=True, pad_inches=0.1, bbox_inches='tight')

@@ -9,7 +9,7 @@ Written by Juan Jurado, Clark McGehee
 
         Erb, Russell E. "Pitot-Statics Textbook." US Air Force Test Pilot School, Edwards AFB, CA (2020).
 """
-from numpy import zeros, sqrt, exp, column_stack, cumsum, hstack, ones, diff
+from numpy import zeros, sqrt, exp, cumsum, hstack, diff
 from scipy import optimize
 
 
@@ -45,12 +45,13 @@ def theta_from_press_alt(press_alt):
     return theta
 
 
-def iterate_pa_oat(height, tot_pres, tat, pa_bias, eta_model):
+def iterate_pa_oat(height, tot_pres, tat, pa_bias, eta):
     pres_alt = height + pa_bias
     amb_pres = 14.6960 * delta_from_press_alt(pres_alt)
     mach_pc = mach_from_qc_pa((tot_pres - amb_pres) / amb_pres)
-    eta = column_stack([ones(mach_pc.shape[0]), mach_pc, mach_pc ** 2]).dot(eta_model)
-    oat = tat / (1 + 0.2 * eta * mach_pc ** 2)
+    mean_oat = (tat / (1 + 0.2 * eta * mach_pc ** 2)).mean()
+    temp_std = 288.15 * theta_from_press_alt(pres_alt)
+    oat = temp_std + (mean_oat - temp_std.mean())
 
     delta_pres_alt = 1000
     delta_oat = 1000
@@ -63,8 +64,8 @@ def iterate_pa_oat(height, tot_pres, tat, pa_bias, eta_model):
 
         amb_pres = 14.6960 * delta_from_press_alt(pres_alt)
         mach_pc = mach_from_qc_pa((tot_pres - amb_pres) / amb_pres)
-        eta = column_stack([ones(mach_pc.shape[0]), mach_pc, mach_pc ** 2]).dot(eta_model)
-        new_oat = tat / (1 + 0.2 * eta * mach_pc ** 2)
+        mean_oat = (tat / (1 + 0.2 * eta * mach_pc ** 2)).mean()
+        new_oat = temp_std + (mean_oat - temp_std.mean())
         delta_oat = sum((oat - new_oat) ** 2)
         oat = new_oat
     return amb_pres, oat, mach_pc

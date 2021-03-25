@@ -14,7 +14,7 @@ Written by Juan Jurado, Clark McGehee
 from pandas import read_csv
 from os.path import splitext, basename
 from JMOSS.utilities import mach_from_qc_pa, iterate_pa_oat
-from numpy import rad2deg, sqrt, zeros, column_stack, cos, tan, arcsin, arctan, diag, ix_, argmax, argmin
+from numpy import rad2deg, sqrt, zeros, column_stack, cos, tan, arcsin, arctan, diag, ix_, argmax, argmin, array
 from numpy.linalg import inv, eig
 from numpy.random import normal
 from scipy.stats import chi2
@@ -156,7 +156,7 @@ class JmossEstimator:
         self.print_console_message('processing', label)
 
         # Use nonlinear least squares to solve for unknown variables
-        params = zeros(7)
+        params = zeros(5)
         wind_to_nav = self.get_frame_transform(label)
         flight_data = self.extract_flight_data(label)
         lsq = least_squares(self.jmoss_obj_tat, params, args=[wind_to_nav, flight_data], method='lm')
@@ -179,7 +179,7 @@ class JmossEstimator:
         # Unload model parameters
         pa_bias = params[0]
         wind = params[[1, 2, 3]]
-        eta_model = params[[4, 5, 6]]
+        eta_model = params[4]
 
         # Iterate to find ambient pressure, oat, and mach based on current parameter estimates
         amb_pres, oat, mach_pc = iterate_pa_oat(height, tot_pres, tat, pa_bias, eta_model)
@@ -245,7 +245,7 @@ class JmossEstimator:
 
             # Compute results
             pa_bias = beta[0]
-            eta_model = beta[[4, 5, 6]]
+            eta_model = beta[4]
             amb_pres, oat, mach_pc = iterate_pa_oat(height, tot_pres, tat, pa_bias, eta_model)
             mach_ic = mach_from_qc_pa((tot_pres - stat_pres) / stat_pres)
             spe_ratio = (stat_pres - amb_pres) / stat_pres
@@ -258,46 +258,43 @@ class JmossEstimator:
             self.mach_ic = mach_ic
             self.aoa = aoa
             self.oat = oat
-            self.parameters = beta
-            self.covariance = beta_cov
+            self.pa_bias = beta[0]
+            self.eta = beta[4]
+            self.wind = beta[1:4]
+            self.raw_stats = dict(parameters=beta, covariance=beta_cov)
             self.flight_data = flight_data
             self.inferences = {}
-            self.generate_confidence_intervals()
+            self.generate_inferences()
 
-        def generate_confidence_intervals(self, alpha=0.05):
-            # Due to the complex relationship between the estimated variables (PA bias, eta model) and our
-            # estimate of SPE ratio, we cannot compute confidence intervals on SPE ratio analytically. Instead, we can
-            # generate a unit sphere and scale using the eigen vectors and eigen values of the covariance matrix.
-            # For SPE ratio, we will operate in 4D (1D Pa bias + 3D eta model)
-
-            # Generate unit sphere in the correct dimension
-            num_points = 100
-            dim = 4
-            samples = normal(size=(dim, num_points))
-            radius = sqrt((samples ** 2).sum(axis=0))
-            points = samples / radius
-
-            # Scale unit sphere using eigenvalues and eigenvectors
-            sub_p = self.parameters[[0, 4, 5, 6]].reshape((4, 1))
-            sub_cov = self.covariance[ix_([0, 4, 5, 6], [0, 4, 5, 6])]
-            w, v = eig(sub_cov)
-            chi2val = chi2.ppf(1 - alpha, dim)
-            scale = sqrt(chi2val * diag(w))
-            scaled_points = v @ scale @ points + sub_p
-
-            # Now send all the points through the iteration function and figure out the bounds of the resulting ambient
-            # pressure estimates.
+        def generate_inferences(self, alpha=0.05):
+            # Unload flight data
             flight_data = self.flight_data
             tot_pres = flight_data[:, 0]
             tat = flight_data[:, 1]
             height = flight_data[:, 5]
             stat_pres = flight_data[:, 6]
+
+            # For SPE and OAT, we need to consider the covariance matrix of Pa bias and Eta
+            # Generate unit circle in 2D using 4 corners
+            circle = array([[1, 0], [0, 1], [-1, 0], [0, -1]]).T
+
+            # Scale unit sphere using eigenvalues and eigenvectors
+            param_id = [0, 4]
+            dim = len(param_id)
+            parameters = self.raw_stats['parameters']
+            covariance = self.raw_stats['covariance']
+            sub_p = parameters[param_id].reshape((dim, 1))
+            sub_cov = covariance[ix_(param_id, param_id)]
+            w, v = eig(sub_cov)
+            chi2val = chi2.ppf(1 - alpha, dim)
+            scale = sqrt(chi2val * diag(w))
+            ellipse = v @ scale @ circle + sub_p
+
+            # Now evaluate all four points to find the min/max of pa and oat
             amb_press = []
             oats = []
-            for point in scaled_points.T:
-                pa_bias = point[0]
-                eta_model = point[1:4]
-                amb_pres, oat, _ = iterate_pa_oat(height, tot_pres, tat, pa_bias, eta_model)
+            for point in ellipse.T:
+                amb_pres, oat, _ = iterate_pa_oat(height, tot_pres, tat, point[0], point[1])
                 amb_press.append(amb_pres.mean())
                 oats.append(oat.mean())
             id_min_pa = argmin(amb_press)
@@ -305,17 +302,10 @@ class JmossEstimator:
             id_min_oat = argmin(oats)
             id_max_oat = argmax(oats)
 
-            low_pa, _, _ = iterate_pa_oat(height, tot_pres, tat, scaled_points[0, id_min_pa],
-                                          scaled_points[1:4, id_min_pa])
-
-            hi_pa, _, _ = iterate_pa_oat(height, tot_pres, tat, scaled_points[0, id_max_pa],
-                                         scaled_points[1:4, id_max_pa])
-
-            _, low_oat, _ = iterate_pa_oat(height, tot_pres, tat, scaled_points[0, id_min_oat],
-                                           scaled_points[1:4, id_min_oat])
-
-            _, hi_oat, _ = iterate_pa_oat(height, tot_pres, tat, scaled_points[0, id_max_oat],
-                                          scaled_points[1:4, id_max_oat])
+            low_pa, _, _ = iterate_pa_oat(height, tot_pres, tat, ellipse[0, id_min_pa], ellipse[1, id_min_pa])
+            hi_pa, _, _ = iterate_pa_oat(height, tot_pres, tat, ellipse[0, id_max_pa], ellipse[1, id_max_pa])
+            _, low_oat, _ = iterate_pa_oat(height, tot_pres, tat, ellipse[0, id_min_oat], ellipse[1, id_min_oat])
+            _, hi_oat, _ = iterate_pa_oat(height, tot_pres, tat, ellipse[0, id_max_oat], ellipse[1, id_max_oat])
 
             hi_spe = (stat_pres - low_pa) / stat_pres
             low_spe = (stat_pres - hi_pa) / stat_pres
@@ -323,3 +313,19 @@ class JmossEstimator:
             # Record values
             self.inferences['spe ratio'] = column_stack([low_spe, hi_spe])
             self.inferences['oat'] = column_stack([low_oat, hi_oat])
+
+            # For winds, we will just record the confidence interval for each dimension separately
+            labels = ['north wind', 'east wind', 'down wind']
+            wind_cov = self.raw_stats['covariance'][1:4, 1:4]
+            chi2val = chi2.ppf(1 - alpha, 1)
+            for index, label in enumerate(labels):
+                # For each dimension of wind, compute its 1-alpha CI
+                sigma2 = wind_cov[index, index]
+                ci = sqrt(chi2val * sigma2)
+                self.inferences[label] = ci
+
+            # Finally eta
+            sigma2 = self.raw_stats['covariance'][4, 4]
+            chi2val = chi2.ppf(1 - alpha, 1)
+            ci = sqrt(chi2val * sigma2)
+            self.inferences['eta'] = ci

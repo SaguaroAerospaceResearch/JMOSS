@@ -16,7 +16,6 @@ from os.path import splitext, basename
 from JMOSS.utilities import mach_from_qc_pa, iterate_pa_oat
 from numpy import rad2deg, sqrt, zeros, column_stack, cos, tan, arcsin, arctan, diag, ix_, argmax, argmin, array
 from numpy.linalg import inv, eig
-from numpy.random import normal
 from scipy.stats import chi2
 from scipy.optimize import least_squares
 from scipy.spatial.transform import rotation as r
@@ -38,6 +37,22 @@ class JmossEstimator:
             self.use_oat = False
         else:
             raise (KeyError('Neither ambient temperature nor total temperature were provided.'))
+
+    @property
+    def test_point_names_list(self):
+        return list(self.flight_data.keys())
+
+    @property
+    def num_test_points(self):
+        return len(self.flight_data.keys())
+
+    @property
+    def results_names_list(self):
+        return list(self.spe_results.keys())
+
+    @property
+    def num_results(self):
+        return len(self.spe_results.keys())
 
     def add_test_point(self, filename: str):
         label = splitext(basename(filename))[0]
@@ -75,14 +90,6 @@ class JmossEstimator:
         das_name = self.parameter_names[parameter_name]
         parameter = data[das_name].to_numpy()
         return parameter
-
-    @property
-    def test_point_names_list(self):
-        return list(self.flight_data.keys())
-
-    @property
-    def num_test_points(self):
-        return len(self.flight_data.keys())
 
     @staticmethod
     def generate_console_messages(settings: dict):
@@ -130,7 +137,7 @@ class JmossEstimator:
         else:
             print(message, end='')
 
-    def get_spe_results(self, labels: list = None):
+    def get_results(self, labels: list = None):
         if labels is None:
             labels = self.test_point_names_list
         all_results = []

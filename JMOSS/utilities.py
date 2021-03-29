@@ -111,11 +111,13 @@ def iterate_pa_oat(height: array, tot_pres: array, tat: array, pa_bias: array, e
     return amb_pres, oat, mach_pc
 
 
-def translate_spe_to_errors(spe_ratio: array, mach_ic: array, target_alt_ic: array = None):
+def translate_spe_to_errors(spe_ratio: array, mach_ic: array, target_alt_ic: float = None):
     # Translate an array of spe ratio and instrument corrected mach number to  dHpc, dVpc, dMpc at a specified target
     # instrument corrected altitude
     if target_alt_ic is None:
-        target_alt_ic = zeros(1)
+        target_alt_ic = array([0])
+    else:
+        target_alt_ic = array([target_alt_ic])
     sea_level_pres = 14.6960
     delta_ic = delta_from_press_alt(target_alt_ic)
     stat_pres = sea_level_pres * delta_ic

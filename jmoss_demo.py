@@ -10,10 +10,11 @@ Written by Juan Jurado, Clark McGehee
         Jurado, Juan D., and Clark C. McGehee. "Complete Online Algorithm for
         Air Data System Calibration." Journal of Aircraft 56.2 (2019): 517-528.
 """
-from JMOSS.estimation import JmossEstimator
-from JMOSS.visualization import JmossVisualizer
 from os import listdir
 from os.path import join
+
+from JMOSS.estimation import JmossEstimator
+from JMOSS.visualization import JmossVisualizer
 
 # TODO: OAT intercept instead of mean()
 # TODO: Ingest weather balloon

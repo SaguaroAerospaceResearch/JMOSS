@@ -77,7 +77,7 @@ class JmossVisualizer:
         if title is None:
             title = 'Air Data Computer Errors'
         rc('font', **self.font_rc)
-        fig, axs = plt.subplots(3, 1, figsize=(10, 8))  # noqa
+        fig, axs = plt.subplots(3, 1, figsize=(10, 8), sharex=False)  # noqa
         colors = self.colors
         curve_labels = ['$\Delta H_{pc}$ [ft]', '$\Delta V_{pc}$ [kts]', '$\Delta M_{pc}$']
         for index, point in enumerate(results):
@@ -85,10 +85,10 @@ class JmossVisualizer:
             for ax_num in range(3):
                 axs[ax_num].plot(point.mach_ic, curves[ax_num], color=colors[index], linestyle='-',
                                  linewidth=2, label=labels[index])
-                axs[ax_num].legend()
-                axs[ax_num].set_xlabel("Instrument corrected Mach number, $M_{ic}$")
                 axs[ax_num].set_ylabel(curve_labels[ax_num])
         axs[0].set_title('%s, Ind. Alt:  %0.0f ft PA' % (title, target_alt_ic), weight='bold')
+        axs[0].legend()
+        axs[2].set_xlabel("Instrument corrected Mach number, $M_{ic}$")
         self.grid_on(axs[0])
         self.grid_on(axs[1])
         self.grid_on(axs[2], 2)
@@ -122,8 +122,8 @@ class JmossVisualizer:
             print('\n' + labels[index] + ':')
             est = point.eta
             ci = point.inferences['eta']
-            print('eta: %0.2f \u00B1 %0.2f' % (est, ci))
+            print('eta: %0.3f \u00B1 %0.3f' % (est, ci))
             for dim, label in enumerate(wind_labels):
                 est = point.wind[dim]
                 ci = point.inferences[label]
-                print('%s: %0.2f \u00B1 %0.2f' % (label, est, ci))
+                print('%s: %0.3f \u00B1 %0.3f' % (label, est, ci))

@@ -16,9 +16,10 @@ from os.path import join
 from JMOSS.estimation import JmossEstimator
 from JMOSS.visualization import JmossVisualizer
 
+# TODO: use_aoa option in plotting
+# TODO: Model fitting / selection
 # TODO: Ingest weather balloon
 # TODO: Ingest TFB
-# TODO: Model fitting / selection
 
 if __name__ == '__main__':
     # Provide the mapping between JMOSS expected parameters and your specific DAS parameters

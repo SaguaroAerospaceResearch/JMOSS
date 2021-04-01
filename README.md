@@ -1,7 +1,4 @@
-# JMOSS
-JMOSS Python library for public release.
-
-Jurado-McGehee Online Self Survey (JMOSS)
+# Jurado-McGehee Online Self-Survey (JMOSS) Static Position Error Estimation Library
 Version 6.0
 April 2021
 Written by Juan Jurado, Clark McGehee

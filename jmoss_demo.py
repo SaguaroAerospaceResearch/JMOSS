@@ -3,7 +3,7 @@ JMOSS Python demo for public release
 
 Jurado-McGehee Online Self Survey (JMOSS)
 Version 6.0
-January 2021
+April 2021
 Written by Juan Jurado, Clark McGehee
 
     Based on:

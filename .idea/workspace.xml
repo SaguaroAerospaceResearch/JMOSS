@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="dac5debb-5a3a-4b6e-927d-ec061ce9b5f0" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/JMOSS/visualization.py" beforeDir="false" afterPath="$PROJECT_DIR$/JMOSS/visualization.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/adc.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/adc.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/JMOSS/estimation.py" beforeDir="false" afterPath="$PROJECT_DIR$/JMOSS/estimation.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/jmoss_demo.py" beforeDir="false" afterPath="$PROJECT_DIR$/jmoss_demo.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/oat.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/oat.pdf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spe.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/spe.pdf" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -138,7 +138,7 @@
       <workItem from="1616621396043" duration="14910000" />
       <workItem from="1616786423290" duration="12169000" />
       <workItem from="1616952738910" duration="3096000" />
-      <workItem from="1617312868545" duration="3515000" />
+      <workItem from="1617312868545" duration="4221000" />
     </task>
     <servers />
   </component>

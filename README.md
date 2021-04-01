@@ -1,4 +1,5 @@
-# Jurado-McGehee Online Self-Survey (JMOSS) Static Position Error Estimation Library
+# JMOSS Static Position Error Estimation Library
+Jurado-McGehee Online Self-Survey (JMOSS)
 Version 6.0
 April 2021
 Written by Juan Jurado, Clark McGehee

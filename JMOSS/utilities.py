@@ -89,9 +89,10 @@ def iterate_pa_oat(height: array, tot_pres: array, tat: array, pa_bias: array, e
     pres_alt = height + pa_bias
     amb_pres = 14.6960 * delta_from_press_alt(pres_alt)
     mach_pc = mach_from_qc_pa((tot_pres - amb_pres) / amb_pres)
-    mean_oat = (tat / (1 + 0.2 * eta * mach_pc ** 2)).mean()
-    temp_std = 288.15 * theta_from_press_alt(pres_alt)
-    oat = temp_std + (mean_oat - temp_std.mean())
+    oat_from_tat = (tat / (1 + 0.2 * eta * mach_pc ** 2))
+    oat_from_atm = 288.15 * theta_from_press_alt(pres_alt)
+    bias = oat_from_tat.mean() - oat_from_atm.mean()
+    oat = oat_from_atm + bias
 
     delta_pres_alt = 1000
     delta_oat = 1000
@@ -104,8 +105,10 @@ def iterate_pa_oat(height: array, tot_pres: array, tat: array, pa_bias: array, e
 
         amb_pres = 14.6960 * delta_from_press_alt(pres_alt)
         mach_pc = mach_from_qc_pa((tot_pres - amb_pres) / amb_pres)
-        mean_oat = (tat / (1 + 0.2 * eta * mach_pc ** 2)).mean()
-        new_oat = temp_std + (mean_oat - temp_std.mean())
+        oat_from_tat = (tat / (1 + 0.2 * eta * mach_pc ** 2))
+        oat_from_atm = 288.15 * theta_from_press_alt(pres_alt)
+        bias = oat_from_tat.mean() - oat_from_atm.mean()
+        new_oat = oat_from_atm + bias
         delta_oat = sum((oat - new_oat) ** 2)
         oat = new_oat
     return amb_pres, oat, mach_pc

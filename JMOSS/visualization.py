@@ -42,7 +42,7 @@ class JmossVisualizer:
         ax.legend()
         ax.set_xlabel("Instrument corrected Mach number, $M_{ic}$")
         ax.set_ylabel("SPE ratio, $\Delta P_p / P_s$")
-        ax.set_title(title, weight='bold')
+        ax.set_title(title + ', alpha = %0.2f' % self.estimator.alpha, weight='bold')
         self.grid_on(ax, 3)
         self.figures['spe'] = fig
 
@@ -63,7 +63,7 @@ class JmossVisualizer:
             ax.plot(mach_ic, point.inferences['oat'], color=colors[index], linestyle='--', linewidth=2)
         ax.set_xlabel("Instrument corrected Mach number, $M_{ic}$")
         ax.set_ylabel("Ambient temperature, $T_a$ [K]")
-        ax.set_title(title, weight='bold')
+        ax.set_title(title + ', alpha = %0.2f' % self.estimator.alpha, weight='bold')
         self.grid_on(ax)
         self.figures['oat'] = fig
 

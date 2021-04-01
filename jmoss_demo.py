@@ -16,7 +16,6 @@ from os.path import join
 from JMOSS.estimation import JmossEstimator
 from JMOSS.visualization import JmossVisualizer
 
-# TODO: OAT intercept instead of mean()
 # TODO: Ingest weather balloon
 # TODO: Ingest TFB
 # TODO: Model fitting / selection
@@ -38,7 +37,8 @@ if __name__ == '__main__':
                        'true heading': 'true_heading_rad'}
 
     # Initialize JMOSS estimator
-    estimator = JmossEstimator(parameter_names)
+    # Default alpha for inferences is 0.05, use alpha=x to set a different alpha
+    estimator = JmossEstimator(parameter_names, alpha=0.01)
 
     # Load test points into estimator
     data_dir = 'sample_data'
@@ -48,10 +48,12 @@ if __name__ == '__main__':
 
     # To process all test points, use 'process_test_points()'
     # To process a list of test points use 'process_test_points(list)'
+    # Where list is a list of point labels
     estimator.process_test_points()
 
     # To get the results of all points, use 'get_results()'
     # To get the results of a list of test points, use 'get_results(list)'
+    # Where list is a list of point labels
     results = estimator.get_results()
 
     # Visualize the results
@@ -62,6 +64,13 @@ if __name__ == '__main__':
     visualizer.plot_spe_results()
     visualizer.plot_oat_results()
     visualizer.plot_adc_errors()
+
+    # Fit a model SPE = f(Mic) to a list of results
+    # To fit a model using all results, use 'fit_model()'
+    # To fit a model using a list of results, use 'fit_model(list)'
+    # Where list is a list of point labels
+    # To also use AOA as a predictor variable, set 'use_aoa=True'
+    estimator.fit_model()
 
     # Save figures
     # To save all, use save_figures()

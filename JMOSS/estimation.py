@@ -22,13 +22,15 @@ from scipy.spatial.transform import rotation as r
 
 
 class JmossEstimator:
-    def __init__(self, parameter_names: dict):
+    def __init__(self, parameter_names: dict, alpha=0.05):
         self.flight_data = {}
         self.spe_results = {}
         self.parameter_names = parameter_names
+        self.alpha = alpha
         self.messages = self.generate_console_messages(parameter_names)
         self.print_console_message('initialize')
         self.print_console_message('settings')
+        self.print_console_message('alpha', alpha)
         if 'ambient temperature' in parameter_names.keys():
             self.print_console_message('using oat')
             self.use_oat = True
@@ -123,6 +125,9 @@ class JmossEstimator:
         messages['processing'] = 'Processing test point %s...'
         messages['done'] = 'Done.\n'
 
+        # Alpha
+        messages['alpha'] = 'Using alpha = %0.2f for all inferences.\n'
+
         return messages
 
     def print_console_message(self, message_id: str, message_variables=None):
@@ -169,7 +174,7 @@ class JmossEstimator:
         lsq = least_squares(self.jmoss_obj_tat, params, args=[wind_to_nav, flight_data], method='lm')
 
         # Use the lsq results to produce SPE model
-        results = self.SpeResults(flight_data, lsq)  # noqa
+        results = self.SpeResults(flight_data, lsq, self.alpha)  # noqa
         self.spe_results[label] = results
 
         # Print done message
@@ -235,7 +240,7 @@ class JmossEstimator:
 
     # Subclass for computing and storing SPE estimates with uncertainty
     class SpeResults:
-        def __init__(self, flight_data, lsq_results):
+        def __init__(self, flight_data, lsq_results, alpha):
             # Unload flight data
             tot_pres = flight_data[:, 0]
             tat = flight_data[:, 1]
@@ -271,15 +276,17 @@ class JmossEstimator:
             self.raw_stats = dict(parameters=beta, covariance=beta_cov)
             self.flight_data = flight_data
             self.inferences = {}
+            self.alpha = alpha
             self.generate_inferences()
 
-        def generate_inferences(self, alpha=0.05):
+        def generate_inferences(self):
             # Unload flight data
             flight_data = self.flight_data
             tot_pres = flight_data[:, 0]
             tat = flight_data[:, 1]
             height = flight_data[:, 5]
             stat_pres = flight_data[:, 6]
+            alpha = self.alpha
 
             # For SPE and OAT, we need to consider the covariance matrix of Pa bias and Eta
             # Generate unit circle in 2D using 4 corners
@@ -336,3 +343,6 @@ class JmossEstimator:
             chi2val = chi2.ppf(1 - alpha, 1)
             ci = sqrt(chi2val * sigma2)
             self.inferences['eta'] = ci
+
+    def fit_model(self, labels=None, use_aoa=False):
+        pass

@@ -4,11 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dac5debb-5a3a-4b6e-927d-ec061ce9b5f0" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/JMOSS/estimation.py" beforeDir="false" afterPath="$PROJECT_DIR$/JMOSS/estimation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/jmoss_demo.py" beforeDir="false" afterPath="$PROJECT_DIR$/jmoss_demo.py" afterDir="false" />
-    </list>
+    <list default="true" id="dac5debb-5a3a-4b6e-927d-ec061ce9b5f0" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -93,6 +89,9 @@
       <module name="JMOSS" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
       <option name="SDK_HOME" value="" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
       <option name="IS_MODULE_SDK" value="true" />
@@ -139,6 +138,7 @@
       <workItem from="1616786423290" duration="12169000" />
       <workItem from="1616952738910" duration="3096000" />
       <workItem from="1617312868545" duration="4221000" />
+      <workItem from="1617580177078" duration="146000" />
     </task>
     <servers />
   </component>

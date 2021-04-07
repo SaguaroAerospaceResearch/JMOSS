@@ -16,8 +16,6 @@ from os.path import join
 from JMOSS.estimation import JmossEstimator
 from JMOSS.visualization import JmossVisualizer
 
-# TODO: use_aoa option in plotting
-# TODO: Model fitting / selection
 # TODO: Ingest weather balloon
 # TODO: Ingest TFB
 
@@ -38,8 +36,7 @@ if __name__ == '__main__':
                        'true heading': 'true_heading_rad'}
 
     # Initialize JMOSS estimator
-    # Default alpha for inferences is 0.05, use alpha=x to set a different alpha
-    estimator = JmossEstimator(parameter_names, alpha=0.01)
+    estimator = JmossEstimator(parameter_names)
 
     # Load test points into estimator
     data_dir = 'sample_data'
@@ -57,26 +54,49 @@ if __name__ == '__main__':
     # Where list is a list of point labels
     results = estimator.get_results()
 
-    # Visualize the results
+    # Fit the final model SPE = f(Mic) to a list of results
+    # To fit a model using all results and default settings, use 'fit_model()'
+    # To fit a model using a list of results, use 'fit_model(labels=list)'
+    # Where list is a list of point labels
+    # If desired, use knots=list to provide a list of mach_ic inflection points to help characterize the transonic curve
+    # Alternatively, use num_knots=float to provide a fixed number of inflection points to use in the transonic region
+    estimator.fit_model()
+
+    # Extract the final model for viewing/exporting
+    # To get the model output for default range of mach_ic values, use predict()
+    # Use alpha to specify the significance level of the confidence interval
+    # You can also feed in a custom array of mach_ic values using predict(mach_ic=array)
+    model = estimator.spe_model
+    model_mach_ic = model.mach_ic
+    model_spe_ratio, model_ci = model.predict(alpha=0.01)
+
+    # Set up the visualizer for plotting
+    visualizer = JmossVisualizer(estimator)
+
+    # Print auxiliary variable (wind and eta) results
+    visualizer.print_aux_variable_results()
+
     # To plot the results of all points, use 'plot_xxx_results()'
     # To get the results of a list of test points, use 'plot_xxx_results(list)'
     # Where xxx is spe, oat, or adc
-    visualizer = JmossVisualizer(estimator)
     visualizer.plot_spe_results()
     visualizer.plot_oat_results()
     visualizer.plot_adc_errors()
 
-    # Fit a model SPE = f(Mic) to a list of results
-    # To fit a model using all results, use 'fit_model()'
-    # To fit a model using a list of results, use 'fit_model(list)'
-    # Where list is a list of point labels
-    # To also use AOA as a predictor variable, set 'use_aoa=True'
-    estimator.fit_model()
+    # Visualize the final model
+    # Use alpha to specify the significance level of the confidence interval
+    # Use standalone=False to plot on top of the results plots
+    # Otherwise, use standalone=True to plot on its own plot
+    visualizer.plot_spe_model(alpha=0.01, standalone=False)
+
+    # Visualize the ADC error models
+    # Use alpha to specify the significance level of the confidence interval
+    # Use standalone=False to plot on top of the results plots
+    # Otherwise, use standalone=True to plot on its own plot
+    visualizer.plot_adc_model(alpha=0.01, standalone=False)
 
     # Save figures
     # To save all, use save_figures()
-    # To save some of them, use save_figures(label) where label is spe, oat, or adc
-    visualizer.save_figures()
-
-    # Print wind and eta results
-    visualizer.print_aux_variable_results()
+    # To save some of them, use save_figures(labels) where labels is a list containing any combination of:
+    # 'spe results', 'oat results', 'adc results', 'spe model', or 'adc model'
+    # visualizer.save_figures()

@@ -14,23 +14,23 @@ Written by Juan Jurado, Clark McGehee
 from pandas import read_csv
 from os.path import splitext, basename
 from JMOSS.utilities import mach_from_qc_pa, iterate_pa_oat
-from numpy import rad2deg, sqrt, zeros, column_stack, cos, tan, arcsin, arctan, diag, ix_, argmax, argmin, array
+from numpy import rad2deg, sqrt, zeros, column_stack, cos, tan, arcsin, arctan, diag, ix_, argmax, argmin, array, \
+    hstack, linspace, ones
 from numpy.linalg import inv, eig
-from scipy.stats import chi2
 from scipy.optimize import least_squares
 from scipy.spatial.transform import rotation as r
+from scipy.stats import chi2
 
 
 class JmossEstimator:
-    def __init__(self, parameter_names: dict, alpha=0.05):
+    def __init__(self, parameter_names: dict):
         self.flight_data = {}
         self.spe_results = {}
+        self.spe_model = None
         self.parameter_names = parameter_names
-        self.alpha = alpha
         self.messages = self.generate_console_messages(parameter_names)
         self.print_console_message('initialize')
         self.print_console_message('settings')
-        self.print_console_message('alpha', alpha)
         if 'ambient temperature' in parameter_names.keys():
             self.print_console_message('using oat')
             self.use_oat = True
@@ -125,8 +125,8 @@ class JmossEstimator:
         messages['processing'] = 'Processing test point %s...'
         messages['done'] = 'Done.\n'
 
-        # Alpha
-        messages['alpha'] = 'Using alpha = %0.2f for all inferences.\n'
+        # Fitting model
+        messages['fitting'] = '\nFitting model to %d tests points...'
 
         return messages
 
@@ -173,8 +173,10 @@ class JmossEstimator:
         flight_data = self.extract_flight_data(label)
         lsq = least_squares(self.jmoss_obj_tat, params, args=[wind_to_nav, flight_data], method='lm')
 
-        # Use the lsq results to produce SPE model
-        results = self.SpeResults(flight_data, lsq, self.alpha)  # noqa
+        # Use the lsq results to produce and record SPE results along wth auxiliary data for model fitting
+        roll = self.get_test_point_parameter(label, 'roll angle')
+        turn_idx = abs(rad2deg(roll)) > 10
+        results = self.SpeResults(flight_data, lsq, turn_idx)
         self.spe_results[label] = results
 
         # Print done message
@@ -240,7 +242,7 @@ class JmossEstimator:
 
     # Subclass for computing and storing SPE estimates with uncertainty
     class SpeResults:
-        def __init__(self, flight_data, lsq_results, alpha):
+        def __init__(self, flight_data, lsq_results, turn_idx):
             # Unload flight data
             tot_pres = flight_data[:, 0]
             tat = flight_data[:, 1]
@@ -270,13 +272,13 @@ class JmossEstimator:
             self.mach_ic = mach_ic
             self.aoa = aoa
             self.oat = oat
+            self.turn_idx = turn_idx
             self.pa_bias = beta[0]
             self.eta = beta[4]
             self.wind = beta[1:4]
             self.raw_stats = dict(parameters=beta, covariance=beta_cov)
             self.flight_data = flight_data
-            self.inferences = {}
-            self.alpha = alpha
+            self.sigmas = {}
             self.generate_inferences()
 
         def generate_inferences(self):
@@ -286,7 +288,6 @@ class JmossEstimator:
             tat = flight_data[:, 1]
             height = flight_data[:, 5]
             stat_pres = flight_data[:, 6]
-            alpha = self.alpha
 
             # For SPE and OAT, we need to consider the covariance matrix of Pa bias and Eta
             # Generate unit circle in 2D using 4 corners
@@ -300,8 +301,7 @@ class JmossEstimator:
             sub_p = parameters[param_id].reshape((dim, 1))
             sub_cov = covariance[ix_(param_id, param_id)]
             w, v = eig(sub_cov)
-            chi2val = chi2.ppf(1 - alpha, dim)
-            scale = sqrt(chi2val * diag(w))
+            scale = sqrt(diag(w))
             ellipse = v @ scale @ circle + sub_p
 
             # Now evaluate all four points to find the min/max of pa and oat
@@ -325,24 +325,96 @@ class JmossEstimator:
             low_spe = (stat_pres - hi_pa) / stat_pres
 
             # Record values
-            self.inferences['spe ratio'] = column_stack([low_spe, hi_spe])
-            self.inferences['oat'] = column_stack([low_oat, hi_oat])
+            self.sigmas['spe ratio'] = (hi_spe - low_spe) / 2
+            self.sigmas['oat'] = (hi_oat - low_oat) / 2
 
             # For winds, we will just record the confidence interval for each dimension separately
             labels = ['north wind', 'east wind', 'down wind']
             wind_cov = self.raw_stats['covariance'][1:4, 1:4]
-            chi2val = chi2.ppf(1 - alpha, 1)
             for index, label in enumerate(labels):
                 # For each dimension of wind, compute its 1-alpha CI
                 sigma2 = wind_cov[index, index]
-                ci = sqrt(chi2val * sigma2)
-                self.inferences[label] = ci
+                sigma = sqrt(sigma2)
+                self.sigmas[label] = sigma
 
             # Finally eta
             sigma2 = self.raw_stats['covariance'][4, 4]
-            chi2val = chi2.ppf(1 - alpha, 1)
-            ci = sqrt(chi2val * sigma2)
-            self.inferences['eta'] = ci
+            sigma = sqrt(sigma2)
+            self.sigmas['eta'] = sigma
 
-    def fit_model(self, labels=None, use_aoa=False):
-        pass
+    class SpeModel:
+        def __init__(self, mach_ic: array, stats: dict):
+            self.mach_ic = mach_ic
+            self.stats = stats
+
+        def predict(self, mach_ic: array = None, alpha=None):
+            if mach_ic is None:
+                mach_ic = self.mach_ic
+            # Build regression matrix
+            x_pred = column_stack([ones(mach_ic.shape), mach_ic, mach_ic ** 2])
+            # If there are knots, append the regression matrix with the knot columns
+            knots = self.stats['knots']
+            if knots is not None:
+                mach_knots = mach_ic.reshape(-1, 1) - knots.reshape(-1, 1).T
+                mach_knots[mach_knots < 0] = 0
+                x_pred = hstack([x_pred, mach_knots ** 2])
+            # Predict spe ratio
+            spe_ratio = x_pred @ self.stats['betas']
+            # Compute the standard error at the prediction points
+            mse = self.stats['mse']
+            kernel = self.stats['kernel']
+            spe_std = sqrt(diag(mse * x_pred @ kernel @ x_pred.T))
+            # If a significance level was provided, multiply the standard error to cover the (1-alpha)% interval
+            if alpha is None:
+                chi2val = 1
+            else:
+                chi2val = chi2.ppf(1 - alpha, 1)
+            ci = sqrt(chi2val) * spe_std
+            return spe_ratio, ci
+
+    def fit_model(self, labels=None, knots=None, num_knots=None):
+        # Collect results
+        results = self.get_results(labels)
+        self.print_console_message('fitting', len(results))
+        # Collect mach and spe ratio from results, excluding samples where aircraft was turning
+        machs = []
+        sigmas = []
+        spes = []
+        for point in results:
+            turning = point.turn_idx
+            mach_ic = point.mach_ic[~turning]
+            spe = point.spe_ratio[~turning]
+            sigma = point.sigmas['spe ratio'][~turning]
+            machs.append(mach_ic)
+            spes.append(spe)
+            sigmas.append(sigma)
+        machs = hstack(machs)
+        spes = hstack(spes)
+        sigmas = hstack(spes) ** 2
+        # Compute the weight matrix
+        w = 1 / sigmas
+        w_mat = diag(w)
+        # Build the regression matrix
+        x_mat = column_stack([ones(machs.shape), machs, machs ** 2])
+        # If supersonic, use spline knots to characterize transonic shapes and append to the regression matrix
+        if machs.max() > 0.9:
+            if knots is None:
+                if num_knots is None:
+                    num_knots = 20
+                knots = linspace(0.9, machs.max(), num_knots)[0:-1]
+            else:
+                knots = array(knots)
+
+            mach_knots = machs.reshape(-1, 1) - knots.reshape(-1, 1).T
+            mach_knots[mach_knots < 0] = 0
+            x_mat = hstack([x_mat, mach_knots ** 2])
+        # Build the stats model
+        kernel = inv(x_mat.T @ w_mat @ x_mat)
+        betas = kernel @ x_mat.T @ w_mat @ spes
+        res = spes - x_mat @ betas
+        sse = (res ** 2).sum()
+        mse = sse / (res.shape[0] - x_mat.shape[1])
+        stats = dict(betas=betas, kernel=kernel, mse=mse, knots=knots)
+        smooth_mach = linspace(machs.min(), machs.max(), 1000)
+        self.spe_model = self.SpeModel(smooth_mach, stats)
+        self.print_console_message('done')

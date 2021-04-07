@@ -20,10 +20,9 @@ def mach_from_qc_pa(qc_over_pa: array):
     mach[~high] = sqrt(5 * ((abs(qc_over_pa[~high]) + 1) ** (2 / 7) - 1))
     for index, value in enumerate(high):
         if value:
-            sol = optimize.root_scalar(lambda m: m - 0.881284 * sqrt((qc_over_pa[index] + 1)
-                                                                     * (1 - 1 / (7 * m ** 2)) ** 2.5),
-                                       method='brentq', bracket=[1.0, 3.0])
-            mach[index] = sol.root
+            sol = optimize.fsolve(lambda m: m - 0.881284 * sqrt((qc_over_pa[index] + 1)
+                                                                     * (1 - 1 / (7 * m ** 2)) ** 2.5), x0=array([1]))
+            mach[index] = sol
     return mach
 
 

@@ -21,7 +21,7 @@ def mach_from_qc_pa(qc_over_pa: array):
     for index, value in enumerate(high):
         if value:
             sol = optimize.fsolve(lambda m: m - 0.881284 * sqrt((qc_over_pa[index] + 1)
-                                                                     * (1 - 1 / (7 * m ** 2)) ** 2.5), x0=array([1]))
+                                                                * (1 - 1 / (7 * m ** 2)) ** 2.5), x0=array([1]))
             mach[index] = sol
     return mach
 
@@ -79,7 +79,7 @@ def airspeed_from_qc_psl(qc_over_psl: array):
     for index, value in enumerate(high):
         if value:
             sol = optimize.newton(lambda v: v - c1 * sqrt((qc_over_psl[index] + 1)
-                                                               * (1 - (1 / (7 * (v / c2) ** 2))) ** 2.5), x0=c2)
+                                                          * (1 - (1 / (7 * (v / c2) ** 2))) ** 2.5), x0=c2)
             airspeed[index] = sol
     return airspeed
 

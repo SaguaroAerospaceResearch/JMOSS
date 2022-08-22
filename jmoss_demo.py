@@ -97,6 +97,6 @@ if __name__ == '__main__':
 
     # Save figures
     # To save all, use save_figures()
-    # To save some of them, use save_figures(labels) where labels is a list containing any combination of:
+    # To save some of them, use save_figures(labels) where "labels" is a list containing any combination of:
     # 'spe results', 'oat results', 'adc results', 'spe model', or 'adc model'
     # visualizer.save_figures()

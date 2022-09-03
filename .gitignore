@@ -1,2 +1,6 @@
 
 C12_data.csv
+
+.DS_Store
+
+*.mat

@@ -16,8 +16,6 @@ from os.path import join
 from JMOSS.estimation import JmossEstimator
 from JMOSS.visualization import JmossVisualizer
 
-# TODO: AtmosphereModel
-
 if __name__ == '__main__':
     # Provide the mapping between JMOSS expected parameters and your specific DAS parameters
     parameter_names = {'time': 'time_s',

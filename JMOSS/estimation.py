@@ -397,11 +397,11 @@ class JmossEstimator:
         # Build the regression matrix
         x_mat = column_stack([ones(machs.shape), machs, machs ** 2])
         # If supersonic, use spline knots to characterize transonic shapes and append to the regression matrix
-        if machs.max() > 0.9:
+        if machs.max(initial=None) > 0.9:
             if knots is None:
                 if num_knots is None:
                     num_knots = 20
-                knots = linspace(0.9, machs.max(), num_knots)[0:-1]
+                knots = linspace(0.9, machs.max(initial=None), num_knots)[0:-1]
             else:
                 knots = array(knots)
 
@@ -415,6 +415,6 @@ class JmossEstimator:
         sse = (res ** 2).sum()
         mse = sse / (res.shape[0] - x_mat.shape[1])
         stats = dict(betas=betas, kernel=kernel, mse=mse, knots=knots)
-        smooth_mach = linspace(machs.min(), machs.max(), 1000)
+        smooth_mach = linspace(machs.min(initial=None), machs.max(initial=None), 1000)
         self.spe_model = self.SpeModel(smooth_mach, stats)
         self.print_console_message('done')
